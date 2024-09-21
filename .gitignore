@@ -1,3 +1,6 @@
-skewt/
-seapol/
+data/
+# DSHIP/
+# seaSnakeData/
+# soundings/
+# seapol/
 __pycache__/

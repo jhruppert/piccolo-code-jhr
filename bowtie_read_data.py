@@ -18,6 +18,8 @@ import xarray as xr
 import pandas as pd
 
 
+data_main = "/Users/jamesruppert/code/piccolo-data/data/"
+
 #############################################
 ### Sounding data
 #############################################
@@ -28,7 +30,8 @@ def read_bowtie_soundings(search_string = 'ascen'):
 
     def get_sounding_filelist(search_string):
 
-        main = "/Volumes/wiss/M203/Radiosondes/level2/"
+        # main = "/Volumes/wiss/M203/Radiosondes/level2/"
+        main = data_main+'soundings/level2/'
 
         process = subprocess.Popen(['ls --color=none '+main+'*'+search_string+'*nc'],shell=True,
             stdout=subprocess.PIPE,universal_newlines=True)
@@ -154,9 +157,10 @@ def read_bowtie_soundings(search_string = 'ascen'):
 
 def read_bowtie_radiometer():
 
-    main_radiometer = "/Volumes/wiss/M203/Radiometer_MWR-HatPro-Uni-Leipzig/Data/"
+    # main = "/Volumes/wiss/M203/Radiometer_MWR-HatPro-Uni-Leipzig/Data/"
+    main = data_main+'radiometer/'
 
-    process = subprocess.Popen(['ls --color=none '+main_radiometer+'*/*singl*nc'],shell=True,
+    process = subprocess.Popen(['ls --color=none '+main+'*/*singl*nc'],shell=True,
         stdout=subprocess.PIPE,universal_newlines=True)
     rdm_files = process.stdout.readlines()
     nfiles=len(rdm_files)
@@ -189,9 +193,10 @@ def read_bowtie_radiometer():
 
 def read_bowtie_sunphotometer():
 
-    main_photometer = "/Volumes/wiss/M203/microtops/downloaded/Meteor_24_0/AOD/Meteor_24_0_all_points.lev15"
+    # main_photometer = "/Volumes/wiss/M203/microtops/downloaded/Meteor_24_0/AOD/Meteor_24_0_all_points.lev15"
+    main = data_main+"microtops/Meteor_24_0/AOD/Meteor_24_0_all_points.lev15"
 
-    photom = pd.read_csv(main_photometer, sep=',', on_bad_lines='skip', skiprows=4)
+    photom = pd.read_csv(main, sep=',', on_bad_lines='skip', skiprows=4)
 
     # Get Datetimes from time stamps
     df_datetime = pd.DataFrame({'year': photom['Date(dd:mm:yyyy)'].str[-4:],
@@ -237,11 +242,16 @@ def read_bowtie_sunphotometer():
 #############################################
 
 # Get snake data
-def read_snake_files():
-    main = "/Volumes/wiss/M203/SeaSnake/seaSnakeData/"
+def read_bowtie_seasnake():
+
+    # def read_seasnake_raw():
+    # main = "/Volumes/wiss/M203/SeaSnake/seaSnakeData/"
+    main = data_main+"SeaSnake/seaSnakeData/"
+
     process = subprocess.Popen(['ls --color=none '+main+'*/*dat'],shell=True,
         stdout=subprocess.PIPE,universal_newlines=True)
     dat_files = process.stdout.readlines()
+
     # Skip first day
     dat_files=dat_files[3:]
     nfile=len(dat_files)
@@ -250,12 +260,56 @@ def read_snake_files():
         idatfile = dat_files[ifile].strip()
         df = pd.read_csv(idatfile, header=None, sep=',', on_bad_lines='skip')
         frames.append(df)
+
     # Concatenate
     frames = pd.concat(frames)
     # Convert first row to datetime64
     frames[0] = pd.to_datetime(frames[0])
+
+    # Convert columns to numeric
+    ncolumns = frames.shape[1]
+    for icol in range(1,ncolumns):
+        frames[icol] = pd.to_numeric(frames[icol], errors='coerce')
+    # Take care of some funky lines
+    frames.loc[frames[2] > 200,2] = np.nan
+    frames.loc[frames[4] > 200,4] = np.nan
+    frames.loc[frames[4] < 10,4] = np.nan
+
     # Return concatenated dataframe sorted by time
     return frames.sort_values(0)
+
+    # def tenmin_avg(snakedat_in):
+
+    #     times_invar = np.array(snakedat_in[0], dtype='datetime64[ns]')
+    #     tenmin = np.timedelta64(10, 'm')
+    #     t_start_new = np.array(times_invar[0], dtype='datetime64[m]')
+    #     top_ind = np.max(np.where(np.isfinite(times_invar)))
+    #     t_end_new = np.array(times_invar[top_ind], dtype='datetime64[m]')
+    #     times_new = np.arange(t_start_new, t_end_new, tenmin, dtype='datetime64[ns]')
+
+    #     # Interpolate to new time array
+    #     data_interp1 = np.interp(times_new.astype(np.float64), times_invar.astype(np.float64), snakedat_in[1])
+    #     data_interp2 = np.interp(times_new.astype(np.float64), times_invar.astype(np.float64), snakedat_in[2])
+    #     data_interp3 = np.interp(times_new.astype(np.float64), times_invar.astype(np.float64), snakedat_in[3])
+    #     data_interp4 = np.interp(times_new.astype(np.float64), times_invar.astype(np.float64), snakedat_in[4])
+
+    #     # Put into dictionary to create new DataFrame
+    #     # (this approach is needed to support different dtypes)
+    #     frame = {0:times_new,
+    #              1:data_interp1,
+    #              2:data_interp2,
+    #              3:data_interp3,
+    #              4:data_interp4,
+    #              }
+
+    #     return pd.DataFrame(data=frame)
+
+    # Read raw data
+    # snakedat = read_seasnake_raw()
+    # Interpolate from one- to ten-minute data
+    # snakedat_new = tenmin_avg(snakedat)
+
+    # return snakedat
 
 
 
@@ -263,10 +317,11 @@ def read_snake_files():
 ### DSHIP data
 #############################################
 
-def read_dship():
+def read_bowtie_dship():
 
     # file = '/Volumes/wiss/M203/Dship_data/data/meteor_meteo_dship.nc'
-    file = '/Volumes/wiss/M203/Dship_data/data/meteor_meteo_dship_20240916.nc'
+    # file = '/Volumes/wiss/M203/Dship_data/data/meteor_meteo_dship_20240918.nc'
+    file = data_main+'DSHIP/meteor_meteo_dship_20240918.nc'
     # dset=xr.open_dataset(file,engine='h5netcdf',chunks='auto')
 
     dset=xr.open_dataset(file)

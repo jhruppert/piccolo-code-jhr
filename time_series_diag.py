@@ -34,7 +34,7 @@ def compute_power_spec(data_in, time_step=1):
     data_interp[nans] = np.interp(x(nans), x(~nans), data[~nans])
 
     # Add diurnal signal as test
-    # signal = np.sin(np.arange(len(data_interp)) * 2*np.pi/8)
+    # signal = np.sin(np.arange(len(data_interp)) * 2*np.pi*time_step)
     # data_interp += signal
 
     # Power spectrum
@@ -82,7 +82,9 @@ def compute_power_spec(data_in, time_step=1):
 # Plot power spectrum
 ########################################################
 
-def plot_power_spec(data_in, time_step=1):
+# Time step in units of 
+
+def plot_power_spec(data_in, time_step=1, title=''):
 
     pspec = compute_power_spec(data_in, time_step=time_step)
 
@@ -90,11 +92,17 @@ def plot_power_spec(data_in, time_step=1):
     plt.plot(pspec['freqs'], pspec['rspec'], '-r', label='Red-noise fit')
     plt.plot(pspec['freqs'], pspec['spec95'], '--g', label='95% confidence')
     plt.plot(pspec['freqs'], pspec['spec99'], '--b', label='99% confidence')
-    # plt.xscale('log')
+    plt.xscale('log')
+    plt.yscale('log')
+    plt.title(title)
     plt.xlabel("$f$ [cycles/day]")
     plt.ylabel('Normalized Power')
-    plt.xlim(0,3)#freqs[-1])
+    # plt.xlim(0,3)#freqs[-1])
+    plt.xlim(1e-2,1e2)#freqs[-1])
+    plt.ylim(1e-6,1e0)#freqs[-1])
     plt.tight_layout()
     plt.legend()
+    plt.show()
+    plt.close()
 
     return
