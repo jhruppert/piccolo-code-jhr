@@ -319,9 +319,7 @@ def read_bowtie_seasnake():
 
 def read_bowtie_dship():
 
-    # file = '/Volumes/wiss/M203/Dship_data/data/meteor_meteo_dship.nc'
-    # file = '/Volumes/wiss/M203/Dship_data/data/meteor_meteo_dship_20240918.nc'
-    file = data_main+'DSHIP/meteor_meteo_dship_20240918.nc'
+    file = data_main+'DSHIP/meteor_meteo_dship_20240923.nc'
     # dset=xr.open_dataset(file,engine='h5netcdf',chunks='auto')
 
     dset=xr.open_dataset(file)
@@ -343,3 +341,38 @@ def read_bowtie_dship():
         }
 
     return dship
+
+
+
+#############################################
+### ISAR SeaSkinTemp data
+#############################################
+
+# Get snake data
+def read_bowtie_ISAR_sst():
+
+    main = data_main+"ISAR_seaskintemp/"
+
+    process = subprocess.Popen(['ls --color=none '+main+'*ISAR*nc'],shell=True,
+        stdout=subprocess.PIPE,universal_newlines=True)
+    dat_files = process.stdout.readlines()
+    nfile=len(dat_files)
+    for ifile in range(nfile):
+        dat_files[ifile] = dat_files[ifile].strip()
+        sstfile = xr.open_dataset(dat_files[ifile])
+        sst_time = sstfile['time'].data
+        isst = sstfile['sea_surface_temperature'].data # K
+        # flag = sstfile['iwv_quality_flag'].data
+        sstfile.close()
+        sst_time = np.array(sst_time, dtype='datetime64[s]')
+        isst = np.array(isst)
+        # cwv[np.where(flag != 0)] = np.nan
+        if ifile == 0:
+            times=sst_time
+            sst=isst
+        else:
+            times=np.concatenate((times,sst_time))
+            sst=np.concatenate((sst,isst))
+
+    return sst, times
+
