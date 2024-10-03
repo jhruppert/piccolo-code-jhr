@@ -1,6 +1,3 @@
 data/
-# DSHIP/
-# seaSnakeData/
-# soundings/
-# seapol/
+.DS*
 __pycache__/

@@ -18,7 +18,7 @@ import xarray as xr
 import pandas as pd
 
 
-data_main = "/Users/jamesruppert/code/piccolo-data/data/"
+data_main = "/Users/jamesruppert/Library/CloudStorage/OneDrive-UniversityofOklahoma/piccolo-data/data/"
 
 #############################################
 ### Sounding data
