@@ -19,10 +19,38 @@ import pandas as pd
 
 
 # data_main = "/Users/jamesruppert/Library/CloudStorage/OneDrive-UniversityofOklahoma/piccolo-data/data/"
-data_main = "/ourdisk/hpc/radclouds/auto_archive_notyet/tape_2copies/piccolo-data/data/"
+# data_main = "/ourdisk/hpc/radclouds/auto_archive_notyet/tape_2copies/piccolo-data/data/"
+data_main = "./data/"
 
 #############################################
 ### Sounding data
+#############################################
+
+# Mask soundings that don't reach 100 hPa (or other threshold setting)
+# Not using actual masking, just setting to NaN
+def mask_soundings(soundings, p_threshold=100): # p_threshold should be in hPa
+    import copy
+    # First save minimum pressure
+    nt = soundings['p'].shape[0]
+    min_pres = np.zeros(nt)
+    for isnd in range(nt):
+        min_pres[isnd] = np.nanmin(soundings['p'][isnd,:]*1e-2) # Pa --> hPa
+    # Mask out soundings that don't reach 100 hPa
+    idx_masked = (min_pres > p_threshold)
+    idx_masked = np.repeat(idx_masked[:,np.newaxis], soundings['p'].shape[1], axis=1)
+    soundings_masked = copy.deepcopy(soundings)
+    for key in soundings_masked.keys():
+        if key == 'hght': continue
+        elif soundings_masked[key].ndim == 2:
+            # soundings[key] = np.ma.masked_where(idx_masked, soundings[key], copy=False)
+            soundings_masked[key][np.where(idx_masked)] = np.nan
+        else:
+            # soundings[key] = np.ma.masked_where(idx_masked[:,0], soundings[key], copy=False)
+            soundings_masked[key][np.where(idx_masked[:,0])] = np.nan
+    return soundings_masked
+
+#############################################
+### Main nested read function
 #############################################
 
 def read_bowtie_soundings(search_string = 'ascen'):
@@ -49,7 +77,7 @@ def read_bowtie_soundings(search_string = 'ascen'):
             nn = time_str[-5:-3]
             sounding_time = np.datetime64('2024-'+mm+'-'+dd+'T'+hh+':'+nn)
             if search_string == 'ascen':
-                # Add 1:10 to all times (assumed time to reach 100 hPa)
+                # Add 1:10 to all times
                 sounding_time += np.timedelta64(70, 'm')
             times.append(sounding_time)
 
