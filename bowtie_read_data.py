@@ -17,8 +17,6 @@ import subprocess
 import xarray as xr
 import pandas as pd
 
-
-# data_main = "/Users/jamesruppert/Library/CloudStorage/OneDrive-UniversityofOklahoma/piccolo-data/data/"
 # data_main = "/ourdisk/hpc/radclouds/auto_archive_notyet/tape_2copies/piccolo-data/data/"
 data_main = "./data/"
 
