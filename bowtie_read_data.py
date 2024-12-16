@@ -16,6 +16,7 @@ import numpy as np
 import subprocess
 import xarray as xr
 import pandas as pd
+import sys
 
 # data_main = "/ourdisk/hpc/radclouds/auto_archive_notyet/tape_2copies/piccolo-data/data/"
 data_main = "./data/"
@@ -125,6 +126,8 @@ def read_bowtie_soundings(search_string = 'ascen'):
         u    = np.full(dims, np.nan)
         v    = np.full(dims, np.nan)
         hght_0c = np.full(nt, np.nan)
+        lat = np.full(nt, np.nan)
+        lon = np.full(nt, np.nan)
 
         # Get height
         sndfile = xr.open_dataset(files[0])
@@ -144,11 +147,15 @@ def read_bowtie_soundings(search_string = 'ascen'):
                 v[ifile,:]    = np.squeeze(sndfile['v'].data)    # m/s
                 sndfile.close()
                 hght_0c[ifile]= hght[ np.where(tmpk[ifile,:] <= 273.15)[0][0] ]
+                lat[ifile]= np.squeeze(sndfile['lat'].data)[1]   # deg N
+                lon[ifile]= np.squeeze(sndfile['lon'].data)[1]   # deg
             except:
                 # print("Failed to read ",files[ifile].split('/')[-1])
                 # Will leave failed read time steps as NaN
                 continue
         sounding = {
+            'lon':lon,
+            'lat':lat,
             'hght':hght,
             'hght_0c':hght_0c,
             'p': p,
@@ -166,7 +173,7 @@ def read_bowtie_soundings(search_string = 'ascen'):
     # Read list of sounding files
     snd_files, times = get_sounding_filelist(search_string=search_string)
 
-    # Adds NaN columns into time and sounding arrays where there are gaps > 3 h
+    # Adds NaNs to sounding file list where there are gaps > 3 h
     # so that time-height plots properly show gaps
     snd_files, times = fix_time_3hrly(times, snd_files)
 
@@ -221,7 +228,8 @@ def read_bowtie_radiometer():
 def read_bowtie_sunphotometer():
 
     # main_photometer = "/Volumes/wiss/M203/microtops/downloaded/Meteor_24_0/AOD/Meteor_24_0_all_points.lev15"
-    main = data_main+"microtops/Meteor_24_0/AOD/Meteor_24_0_all_points.lev15"
+    # main = data_main+"microtops/Meteor_24_0_old/AOD/Meteor_24_0_all_points.lev15"
+    main = data_main+"microtops/Meteor_24_0/AOD/Meteor_24_0_all_points.lev20"
 
     photom = pd.read_csv(main, sep=',', on_bad_lines='skip', skiprows=4)
 
@@ -268,7 +276,6 @@ def read_bowtie_sunphotometer():
 ### SeaSnake data
 #############################################
 
-# Get snake data
 def read_bowtie_seasnake():
 
     # def read_seasnake_raw():
@@ -375,7 +382,6 @@ def read_bowtie_dship():
 ### ISAR SeaSkinTemp data
 #############################################
 
-# Get snake data
 def read_bowtie_ISAR_sst():
 
     main = data_main+"ISAR_seaskintemp/"
@@ -403,3 +409,41 @@ def read_bowtie_ISAR_sst():
 
     return sst, times
 
+
+
+#############################################
+### AEW tracks
+#############################################
+
+def read_aew_tracks():
+
+    main = data_main+"AEW_tracks_BOWTIE_post_processed.nc"
+
+    aewfile = xr.open_dataset(main)
+    time = aewfile['time'].data
+    # Dimensions are n-system (25) x ntime
+    lon = aewfile['AEW_lon_smooth'].data
+    # Dimensions are n-system (25) x ntime
+    lat = aewfile['AEW_lat_smooth'].data
+    aewfile.close()
+
+    return lon, lat, time
+
+
+
+#############################################
+### IMERG precip
+#############################################
+
+def read_bowtie_imerg_precip():
+
+    main = data_main+"meteor_IMERG_range1.2deg.nc"
+
+    file = xr.open_dataset(main)
+    time = file['time'].data
+    # Dimensions are ntime
+    imerg_mean = file['mean_precipitation'].data # mm/hr
+    imerg_max = file['max_precipitation'].data # mm/hr
+    file.close()
+
+    return imerg_mean, imerg_max, time
