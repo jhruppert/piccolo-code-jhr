@@ -379,6 +379,28 @@ def read_bowtie_dship():
 
 
 #############################################
+### Thermosalinograph SST data
+#############################################
+
+def read_thermosalin_sst():
+
+    file = data_main+'DSHIP/M203_surf_oce.nc'
+
+    dset=xr.open_dataset(file)
+    time = dset.TIME.data
+    sst = dset.TEMP.data # Thermosalinigraph 1 & 2
+    dset.close()
+
+    tsg_sst = {
+        'time':time,
+        'sst':sst,
+        }
+
+    return tsg_sst
+
+
+
+#############################################
 ### ISAR SeaSkinTemp data
 #############################################
 
@@ -447,3 +469,21 @@ def read_bowtie_imerg_precip():
     file.close()
 
     return imerg_mean, imerg_max, time
+
+
+
+##################################
+### Disdrometer precip
+#############################################
+
+def read_bowtie_disd_precip():
+
+    main = data_main+"disdrometer_RES_meteor2_joined.nc"
+
+    file = xr.open_dataset(main)
+    time = file['time'].data
+    # Dimensions are ntime
+    rainrate = file['rain_rate_qc'].data # mm/hr
+    file.close()
+
+    return rainrate, time
