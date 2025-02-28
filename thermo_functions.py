@@ -13,8 +13,6 @@
 
 
 import numpy as np
-from metpy.calc import cape_cin, dewpoint_from_specific_humidity, parcel_profile#, most_unstable_parcel
-from metpy.units import units
 
 
 ############################################################################
@@ -90,10 +88,10 @@ def density_moist(T, qv, pres):
     T+=T0
 
     rd=287.04
-    # rv=461.5
-    # eps_r=rv/rd
-    # return pres / ( rd * T * (1. + qv*eps_r)/(1.+qv) )
-    return pres*p_fact / ( rd * T * (1. + 0.61*qv) )
+    rv=461.5
+    eps_r=rv/rd
+    return pres / ( rd * T * (1. + qv*eps_r)/(1.+qv) )
+    # return pres*p_fact / ( rd * T * (1. + 0.61*qv) )
 
 
 ## Density dry ######################################################
@@ -403,6 +401,23 @@ def mixr2sh(mixr):
     return q
 
 
+## Specific humidity TO mixing ratio ######################################################
+
+# ; PURPOSE:
+# ;       Convert specific humidity (kg H2O per kg of total air) to
+# ;       mixing ratio (same units).
+# ; INPUTS:
+# ;       MIXR: Float or FltArr(n) H2O mixing ratios in kg H2O per kg total air
+# ; OUTPUTS:
+# ;       returns the specific humidity
+# 
+# James Ruppert (jruppert@ou.edu), Feb 2025
+
+def sh2mixr(q):
+    mixr = q / (1 - q)
+    return mixr
+
+
 ## CAPE / CIN ######################################################
 
 # Use MetPy package to calculate CAPE and CIN from the most unstable parcel.
@@ -434,6 +449,9 @@ def mixr2sh(mixr):
 # September 2024 from the Meteor
 #  
 def get_cape_cin(T_in, qv_in, pres_in, type='sfc'):
+
+    from metpy.calc import cape_cin, dewpoint_from_specific_humidity, parcel_profile#, most_unstable_parcel
+    from metpy.units import units
 
     # Convert hPa if necessary
     p_fact=1
